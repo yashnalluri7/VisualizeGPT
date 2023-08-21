@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>| kellton</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
+    <script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <!-- Include Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+    <link rel="icon" href="https://www.kellton.com/themes/custom/kellton_theme/favicon.ico"
+        type="image/vnd.microsoft.icon" />
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <div class="col-sm-4 text-left">
+            <img src="https://d1ugv6dopk5bx0.cloudfront.net/s3fs-public/logo-white.svg" alt="Home" />
+        </div>
+        <div class="col-sm-7">
+            <h1 id="label-text">Prompt Engineering</h1>
+        </div>
+        <div class="col-sm-1" id="save-btn-div">
+            <button type="button" class="btn btn-primary" onclick="showPrompt()" style="background-color: #f0ad4e;
+    color: #384d48;
+    font-size: 30px;
+    font-weight: 900;
+    border-color: #eea236;">
+                Save
+            </button>
+        </div>
+    </div>
+
+    <div class="col-sm-12" style="margin-top: -20px;">
+        <br />
+        <br />
+        <div class="radio-buttons">
+            <label>
+                <input type="radio" name="visualizationType" value="ERD" onclick="setModalContentRadio(this)">
+                ERD
+            </label>
+            <label>
+                <input type="radio" name="visualizationType" value="Business Flow" onclick="setModalContentRadio(this)">
+                Business Flow
+            </label>
+            <label>
+                <input type="radio" name="visualizationType" value="Process Flow" onclick="setModalContentRadio(this)">
+                Process Flow
+            </label>
+            <label>
+                <input type="radio" name="visualizationType" value="Sentiment Analysis"
+                    onclick="setModalContentRadio(this)">
+                Sentiment Analysis
+            </label>
+            <label>
+                <input type="radio" name="visualizationType" value="Text Summarization"
+                    onclick="setModalContentRadio(this)">
+                Text Summarization
+            </label>
+        </div>
+        <div class="col-sm-11">
+            <div class="input-container">
+                <label for="prompt" id="label-text">Enter a Prompt:</label>
+                <div class="input-wrapper card">
+                    <!-- Added the input wrapper here -->
+                    <textarea type="text" class="form-control" placeholder="Type your prompt here..." rows="6"
+                        id="prompt"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-1" style="margin-top: 62px">
+            <button type="button" class="btn btn-primary" onclick="getChatGPTResponse()" style="
+            background-color: #32f8fb;
+            color: #384d48;
+            font-size: 32px;
+            font-weight: 900;
+            border-color: #e3ffff;
+          ">
+                Submit
+            </button>
+        </div>
+
+        <div class="col-sm-12">
+            <h2 id="label-text" class="response-label">ChatGPT's Response:</h2>
+            <div id="response-box"></div>
+            <div id="loading" class="loading-container">
+                <!-- Add different colored spinners using Font Awesome icons -->
+                <div class="spinner red">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="spinner blue">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="spinner green">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <!-- Optionally, you can add a loading text -->
+                <span class="loading-text">Loading...</span>
+            </div>
+        </div>
+        <!-- Container for the Graph Visualization -->
+
+        <div class="col-sm-12" id="graph-div">
+            <h2 id="label-text">Graph Output:</h2>
+            <div id="graph-box">
+                <div id="graph"></div>
+            </div>
+        </div>
+        <!-- Modal -->
+        <div class="modal fade bd-example-modal-sm" id="saveModal" tabindex="-1" role="dialog"
+            aria-labelledby="mySmallModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Enter File Name</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Text field for user input -->
+                        <input type="text" class="form-control" id="inputText" placeholder="Enter file name..."
+                            style="height: 40px;">
+                    </div>
+                    <div class="modal-footer">
+                        <!-- Save button -->
+                        <button type="button" class="btn btn-primary" onclick="saveInputValueAsTxt()">Save</button>
+                        <!-- Close button -->
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="promptModal" tabindex="-1" role="dialog" aria-labelledby="promptModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="promptModalLabel">visualizationType</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="promptContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+    </div>
+    <script>
+
+        // global variables
+        var visualizationType = undefined;
+        var content = '';
+        var erd = "Your task is to write Graphviz code to generate an Entity Relationship Diagram (ERD) for the following entities. The code must adhere to the following steps: \n1. Display each entity and its related attributes. \n2. Handle all the edge cases specified below. \3. Follow any specific directions given. \n4. If the attributes are not mentioned, then assume the required attributes. \n5. If the entities are not mentioned, then assume the required entities. \nThe entities for the ERD are as follows: "
+        var bf = "Your task is to write Graphviz code to generate a business flow diagram covering the following functions/departments. The code must use the following symbols to make the business flow diagram: \nOval: Ovals indicate the start and endpoints of a process. \nRectangle: Rectangles represent a task or activity (e.g., create a purchase order). \nDiamond: Diamonds indicate a decision, typically in a yes or no question. \nArrow: An arrow shows the direction of a process from one step to the next. \nFor each of the following departments/steps, the diagram must have atleast 3 symbols involved. \nHandle any and all edge cases mentioned below. Your answer must give a single business flow with only 1 pair of start and end steps. \nThe functions/departments are as follows:"
+        var pf = "Your task is to write Graphviz code to generate a process flow for a specified system and process. The code must use the following symbols to make the process flow diagram: \nOval: Ovals indicate the start and endpoints of a process. \nRectangle: Rectangles represent a task or activity (e.g., create a purchase order). \nDiamond: Diamonds indicate a decision, typically in a yes or no question. \nArrow: An arrow shows the direction of a process from one step to the next. \nYour diagram must have a minimum of 5 steps for this process flow and must handle any and all edge cases if specified. \nThe process flow is about the following: "
+        var sa = "Create a framework/matrix to understand sentiments based on textual data (such as emails). Assess the sentiment of the following text based on the framework you create, and display your framework and analysis. Additionally, generate an applicable and appropriate response to the given text, based on the context and sentiment analysis of the text. Make sure to generate a RESPONSE to the given text or email in your answer."
+        var ts = "Your task is to summarize the following text according to the following requirements: \n1. For the given text, provide a list of active and relevant characters/participants in the text (For example: The cat and the fox attacked Tony. Characters: Cat, Fox, Tony). \n2. Provide a clear and concise summary of the given text. \nThe text is as follows: "
+
+
+
+        function showSpinner() {
+            const spinner = document.getElementById('loading');
+            spinner.style.display = 'flex';
+        }
+
+        function hideSpinner() {
+            const spinner = document.getElementById('loading');
+            spinner.style.display = 'none';
+        }
+
+        // Initialize messages array to store prompt and response
+        const messages = [
+            {
+                role: "system",
+                content: "You are a helpful assistant.",
+            },
+        ];
+        async function getChatGPTResponse() {
+            showSpinner();
+            const inputValue = document.getElementById("prompt").value;
+            let promptInput = ''; // Change 'const' to 'let'
+            if (visualizationType === 'ERD') {
+                promptInput = erd + inputValue;
+            } else if (visualizationType === 'Business Flow') {
+                promptInput = bf + inputValue;
+            } else if (visualizationType === 'Process Flow') {
+                promptInput = pf + inputValue;
+            } else if (visualizationType === 'Sentiment Analysis') {
+                promptInput = sa + inputValue;
+            } else if (visualizationType === 'Text Summarization') {
+                promptInput = ts + inputValue;
+            }
+
+            // Replace 'YOUR_OPENAI_API_KEY' with your actual OpenAI API key
+            const apiKey = "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";
+            const apiUrl = "https://api.openai.com/v1/chat/completions";
+            const model = "gpt-3.5-turbo"; // You can use another model if needed
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            };
+
+            // Add the new prompt to the messages array
+            messages.push({
+                role: "user",
+                content: promptInput,
+            });
+
+            const data = {
+                model,
+                messages,
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify(data),
+                });
+
+                const responseData = await response.json();
+                const chatGPTResponse = responseData.choices[0].message.content;
+
+                // Display the response
+                document.getElementById("response-box").innerText = chatGPTResponse;
+
+
+
+                // drawing the graphs
+
+                // Use regex to extract the text inside the backticks
+                const regex = /```(?:[a-zA-Z0-9]+)?([\s\S]+?)```/;
+                const matches = chatGPTResponse.match(regex);
+                const extractedText = matches ? matches[1] : '';
+                console.log(extractedText);
+
+                if (visualizationType !== "Sentiment Analysis" && visualizationType !== "Text Summarization") {
+                    showGraphs(extractedText);
+                }
+                // Hide the graph output box
+                adjustLayoutForTextTasks(true);
+
+                setTimeout(() => {
+                    hideSpinner();
+                    if (visualizationType !== "Sentiment Analysis" && visualizationType !== "Text Summarization") {
+                        const graphDiv = document.getElementById('graph-div');
+                        graphDiv.style.display = 'block';
+                    }
+                    const saveBtnhDiv = document.getElementById('save-btn-div');
+                    saveBtnhDiv.style.display = 'block';
+                }, 10)
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("response-box").innerText =
+                    "An error occurred. Please try again.";
+            }
+        }
+
+        // Function to show the prompt modal
+        function showPrompt() {
+            $('#saveModal').modal('show');
+        }
+
+        // showing the graph
+        function showGraphs(gptRespone) {
+            // Get the input value from the textarea
+            debugger;
+            var dotInput = gptRespone;
+
+            var dotIndex = 0;
+            var graphviz = d3
+                .select("#graph")
+                .graphviz()
+                .transition(function () {
+                    return d3
+                        .transition("main")
+                        .ease(d3.easeLinear)
+                        .delay(500)
+                        .duration(1500);
+                })
+                .logEvents(true)
+                .on("initEnd", render);
+
+
+            function render() {
+                var dotLines = dots[dotIndex];
+                var dot = dotLines.join("");
+                graphviz.renderDot(dot).on("end", function () {
+                    dotIndex = (dotIndex + 1) % dots.length;
+                    render();
+                });
+            }
+
+            // Array containing the DOT input data
+            var dots = [[dotInput]];
+        }
+
+        // downloading the svg image in to the local system.
+        function saveSVGImageAsFile(divId, fileName) {
+            debugger;
+            // Get the SVG content from the div with the given ID
+            const svgContent = document.getElementById(divId).innerHTML;
+
+            // Create a data URL from the SVG content
+            const dataURL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+
+            // Create an anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = dataURL;
+
+            // Set the download attribute to specify the filename
+            downloadLink.download = fileName + '_' + 'flow'
+
+            // Simulate a click on the anchor element to trigger the download
+            downloadLink.click();
+            downloadLink.remove();
+            document.getElementById('inputText').value = '';
+        }
+
+        // saving request in .txt file
+        function saveInputValueAsTxt() {
+            debugger;
+            $('#saveModal').modal('hide');
+            const fileName = document.getElementById('inputText').value;
+
+            // Get the input value
+            const inputValue = document.getElementById('prompt').value;
+
+            // Create a Blob from the input value
+            const blob = new Blob([inputValue], { type: 'text/plain' });
+
+            // Create a URL for the Blob
+            const url = URL.createObjectURL(blob);
+
+            // Create a temporary anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = fileName + '_' + 'prompt.txt';
+
+            // Programmatically click the link to trigger the download
+            downloadLink.click();
+
+            // Cleanup the URL and remove the temporary anchor element
+            URL.revokeObjectURL(url);
+            downloadLink.remove();
+            saveResponseAsTxt(fileName);
+        }
+
+        // saving response in .txt file
+        function saveResponseAsTxt(fileName) {
+            // Get the input value
+            debugger;
+            const inputValue = document.getElementById("response-box").innerHTML;
+
+            // Create a Blob from the input value
+            const blob = new Blob([inputValue], { type: 'text/plain' });
+
+            // Create a URL for the Blob
+            const url = URL.createObjectURL(blob);
+
+            // Create a temporary anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = fileName + '_' + 'response.txt';
+
+            // Programmatically click the link to trigger the download
+            downloadLink.click();
+
+            // Cleanup the URL and remove the temporary anchor element
+            URL.revokeObjectURL(url);
+            downloadLink.remove();
+            if (visualizationType !== "Sentiment Analysis" && visualizationType !== "Text Summarization") {
+                saveSVGImageAsFile('graph', fileName);
+            }
+        }
+        function setModalContentRadio(radioButton) {
+            debugger;
+            visualizationType = radioButton.value;
+            content = getModalContent(visualizationType);
+            const modalTitle = document.getElementById("promptModalLabel");
+
+            // Set the modal title to the selected visualizationType
+            modalTitle.textContent = visualizationType;
+
+            document.getElementById("promptContent").innerHTML = content;
+
+            // Adjust layout based on selected radio button
+            if (visualizationType === "Sentiment Analysis" || visualizationType === "Text Summarization") {
+                adjustLayoutForTextTasks(true);
+            } else {
+                adjustLayoutForTextTasks(false);
+            }
+
+            // Show the modal
+            $('#promptModal').modal('show');
+        }
+
+        function adjustLayoutForTextTasks(isTextTask) {
+            var graphDiv = document.getElementById("graph-div");
+            var responseBox = document.getElementById("response-box");
+            if (isTextTask) {
+                graphDiv.style.display = "none"; // Hide the graph output box
+                responseBox.style.height = "800px"; // Increase response box height for Sentiment Analysis and Text Summarization
+
+            } else {
+                graphDiv.style.display = "block"; // Show the graph output box
+                responseBox.style.height = "150px"; // Default response box height
+            }
+        }
+
+        function getModalContent(visualizationType) {
+            debugger;
+            content = "";
+            switch (visualizationType) {
+                case "ERD":
+                    content = "1. Customer \n2. Product \n3. Order \n4. Inventory \n5. Stock-In \n6. Payment \nIn the case of the Inventory entity, there are 2 edge cases for this entity: \nCase 1: If there is enough stock for all products in the order, then continue to the next step. Else, \nCase 2: If there is no stock available for atleast 1 of the products in the order, then display the Stock-in entity and its attributes. The purpose of this entity is to request a re-stock for the out of stock products. \nOnce the payment is done, Deduct the number of product items paid for from the Inventory stock. \nGenerate only an ERD. All attributes and entities must be shown in the ERD and linked with their respective entities.";
+                    break;
+                case "Business Flow":
+                    content = "1. Customer (Sign-up or Log-in) \n2. Details Verification and Approval \n3. Product List and Selection \n4. Order List \n3. Inventory management (including stock-outs and stock-in requests) \n4. Payment transactions"
+                    break;
+                case "Process Flow":
+                    content = "System: Order Management \nFunction: Customer Registration and details";
+                    break;
+                case "Sentiment Analysis":
+                    content = "Dear Mr. Singh, \nI regret to inform you that we no longer have the item from your order #891 in stock. This was an unfortunate technical error on our part. I am very sorry for the mistake. \nWe have refunded the amount to your original form of payment. It should appear in your account in three to five business days. I have also attached a gift card for $50 that you can use online or in any of our stores. \nAgain, I apologize for our mistake. Please contact me at 123-555-6789 or via email if you have any questions. \nSincerely, \nJane Ko \nCustomer Support Specialist";
+                    break;
+                case "Text Summarization":
+                    content = "The Pakistan Cricket Board (PCB) announced squads for the Asia Cup 2023 as well as the Afghanistan ODI series preceding the continental tournament on Wednesday. Newly-appointed chief selector Inzamam-ul-Haq, who returned to the position for a second term after previously presiding between 2016-19, announced the squads in a press conference in Karachi; while Babar Azam will lead the Pakistan sides in both tournaments, Shadab Khan is named his deputy. While Shan Masood and Ihsanullah were dropped from the side, the team management showed its faith on Faheem Ashraf, who made a return to the side for both series. Ashraf has had a poor outing of late; he last played an ODI for Pakistan in 2021 and even his recent T20I outings left much to be desired. He picked only one wicket in five-match T20I series against New Zealand -- playing in all games -- and registered scores of 22, 27, and 1* in three batting innings. In the Global T20 league in Canada, Ashraf played in five games and while he remained among the wickets -- 7 in total -- the 29-year-old scored only 21 runs from three innings. And so, Ashraf's inclusion did come as a surprise as Pakistan prepare for the all-important ODI World Cup in India. But while the all-rounder's form remains a concern, former Pakistan wicketkeeper-batter Kamran Akmal believes that this is time for Ashraf to establish himself as a first-choice pick in the side's playing XI. Akmal also urged the all-rounder to take notes from Indian counterpart Hardik Pandya, who is also the current vice-captain in ODIs. “The Indian white-ball team is never complete without Hardik Pandya. He is there every time an Indian team is announced in white-ball cricket. You look at his record, he has won matches for his team with both, bat and ball. It is time Faheem Ashraf also starts to perform like him,” said Akmal on his official YouTube channel. \n“It has been so long now, he has to show some maturity. I want Faheem Ashraf to be a surety in Pakistan's white-ball team whenever it's announced yet. He has to develop himself as all-rounder. He has to show that responsibility.” \nAkmal further stated that the backing Ashraf received with his inclusion in the squads shouldn't go waste, and insisted that the all-rounder has to do justice to the faith shown on him.";
+                    break;
+                default:
+                    content = "Select a visualization type to see details.";
+                    break;
+            }
+            return content;
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>| kellton</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/@hpcc-js/wasm@0.3.11/dist/index.min.js"></script>
+    <script src="https://unpkg.com/d3-graphviz@3.0.5/build/d3-graphviz.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <!-- Include Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" />
+    <link rel="icon" href="https://www.kellton.com/themes/custom/kellton_theme/favicon.ico"
+        type="image/vnd.microsoft.icon" />
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <div class="col-sm-4 text-left">
+            <img src="https://d1ugv6dopk5bx0.cloudfront.net/s3fs-public/logo-white.svg" alt="Home" />
+        </div>
+        <div class="col-sm-7">
+            <h1 id="label-text">Flow or ERD</h1>
+        </div>
+        <div class="col-sm-1" id="save-btn-div">
+            <button type="button" class="btn btn-primary" onclick="showPrompt()" style="background-color: #f0ad4e;
+    color: #384d48;
+    font-size: 30px;
+    font-weight: 900;
+    border-color: #eea236;">
+                Save
+            </button>
+        </div>
+    </div>
+
+    <div class="col-sm-12" style="margin-top: -20px;">
+        <br />
+        <br />
+        <div class="col-sm-11">
+            <div class="input-container">
+                <label for="prompt" id="label-text">Enter your prompt:
+                    <!-- Add an info icon and define the popover content using the data-content attribute -->
+                    <span>
+                        <span class="d-inline-block" tabindex="0" data-toggle="modal" data-target="#flowModal"
+                            data-content="Entity Relationship Diagram (ERD):
+                        Your task is to write Graphviz code to generate an Entity Relationship Diagram (ERD) for an Order Management System. The entities for the ERD are as follows:
+1. Customer
+2. Product
+3. Order
+4. Inventory
+5. Stock-In
+6. Payment
+The code must adhere to the following steps:
+1. Display the Customer entity and all its related attributes
+2. Display the Product entity and all its related attributes
+3. Display the Order entity and all its related attributes.
+4. Display the Inventory entity and all its related attributes. There are 2 cases in this step.
+Case 1: If there is enough stock for all products in the order, then continue to the next step. Else,
+Case 2: If there is no stock available for atleast 1 of the products in the order, then display the Stock-in entity and its attributes. The purpose of this entity is to request a re-stock for the out of stock products.
+5. Display the Payment entity and all its related attributes.
+6. Once the payment is done, Deduct the number of product items paid for from the Inventory stock.
+Generate only an ERD. All attributes and entities must be shown in the ERD and linked with their respective entities. Assume any required attributes for the provided entities."
+                            onclick="setModalContent(this)">
+                            <i class="fas fa-solid fa-briefcase"></i>
+                        </span>
+                        <span class="d-inline-block" tabindex="1" data-toggle="modal" data-target="#flowModal"
+                            data-content="Business Flow:
+                        Your task is to write Graphviz code to generate a business flow for an order management system covering the following functions/departments:
+1. Customer login and details
+2. Product selection and order list
+3. Inventory management (including stock-outs and stock-in requests)
+4. Payment transactions
+For each mentioned step, the diagram must have 2-3 symbols involved.
+Use the following symbols to make the business flow diagram:
+Oval: Ovals indicate the start and endpoints of a process.
+Rectangle: Rectangles represent a task or activity (e.g., create a purchase order).
+Diamond: Diamonds indicate a decision, typically in a yes or no question.
+Arrow: An arrow shows the direction of a process from one step to the next.
+Generate the required business flow diagram. Assume any required details." onclick="setModalContent(this)">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                        <span class="d-inline-block" tabindex="2" data-toggle="modal" data-target="#flowModal"
+                            data-content="Process Flow:
+                        Your task is to write Graphviz code to generate a process flow for an order management system. Your process flow is about the Customer registration and details
+Your diagram must have a minimum of 5 steps for this process flow
+Use the following symbols to make the process flow diagram:
+Oval: Ovals indicate the start and endpoints of a process.
+Rectangle: Rectangles represent a task or activity (e.g., create a purchase order).
+Diamond: Diamonds indicate a decision, typically in a yes or no question.
+Arrow: An arrow shows the direction of a process from one step to the next.
+Generate the required process flow diagram. Assume any required details." onclick="setModalContent(this)">
+                            <i class="fas fa-thin fa-network-wired"></i>
+                        </span>
+                    </span>
+                </label>
+                <div class="input-wrapper card">
+                    <!-- Added the input wrapper here -->
+                    <textarea type="text" class="form-control" placeholder="Type your prompt here..." rows="6"
+                        id="prompt"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="flowModel" tabindex="-1" role="dialog" aria-labelledby="promptModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="promptModalLabel">Prompt Details</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="promptContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function setModalContent(element) {
+                var content = element.getAttribute("data-content");
+                document.getElementById("promptContent").innerHTML = content;
+                $('#flowModel').modal('show');
+            }
+        </script>
+        <div class="col-sm-1" style="margin-top: 62px">
+            <button type="button" class="btn btn-primary" onclick="getChatGPTResponse()" style="
+            background-color: #32f8fb;
+            color: #384d48;
+            font-size: 30px;
+            font-weight: 900;
+            border-color: #e3ffff;
+          ">
+                Submit
+            </button>
+        </div>
+
+        <div class="col-sm-12">
+            <h2 id="label-text">ChatGPT's Response:
+            </h2>
+            <div id="response-box"></div>
+            <div id="loading" class="loading-container">
+                <!-- Add different colored spinners using Font Awesome icons -->
+                <div class="spinner red">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="spinner blue">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="spinner green">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <!-- Optionally, you can add a loading text -->
+                <span class="loading-text">Loading...</span>
+            </div>
+        </div>
+        <!-- Container for the Graph Visualization -->
+
+        <div class="col-sm-12" id="graph-div">
+            <h2 id="label-text">Graph Output:</h2>
+            <div id="graph-box">
+                <div id="graph"></div>
+            </div>
+        </div>
+        <!-- Modal -->
+        <div class="modal fade bd-example-modal-sm" id="promptModal" tabindex="-1" role="dialog"
+            aria-labelledby="mySmallModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Enter File Name</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Text field for user input -->
+                        <input type="text" class="form-control" id="inputText" placeholder="Enter file name..."
+                            style="height: 40px;">
+                    </div>
+                    <div class="modal-footer">
+                        <!-- Save button -->
+                        <button type="button" class="btn btn-primary" onclick="saveInputValueAsTxt()">Save</button>
+                        <!-- Close button -->
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+    <script>
+
+        $(function () {
+            $('[data-toggle="busines-popover"]').popover();
+            $('[data-toggle="flow-popover"]').popover();
+            $('[data-toggle="erd-popover"]').popover();
+        });
+
+        function showSpinner() {
+            const spinner = document.getElementById('loading');
+            spinner.style.display = 'flex';
+        }
+
+        function hideSpinner() {
+            const spinner = document.getElementById('loading');
+            spinner.style.display = 'none';
+        }
+
+        // Initialize messages array to store prompt and response
+        const messages = [
+            {
+                role: "system",
+                content: "You are a helpful assistant.",
+            },
+        ];
+        async function getChatGPTResponse() {
+            showSpinner();
+            const promptInput = document.getElementById("prompt").value;
+            // Replace 'YOUR_OPENAI_API_KEY' with your actual OpenAI API key
+            const apiKey = "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";
+            const apiUrl = "https://api.openai.com/v1/chat/completions";
+            const model = "gpt-3.5-turbo"; // You can use another model if needed
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+            };
+
+            // Add the new prompt to the messages array
+            messages.push({
+                role: "user",
+                content: promptInput,
+            });
+
+            const data = {
+                model,
+                messages,
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify(data),
+                });
+
+                const responseData = await response.json();
+                const chatGPTResponse = responseData.choices[0].message.content;
+
+                // Display the response
+                document.getElementById("response-box").innerText = chatGPTResponse;
+                // drawing the graphs
+
+                // Use regex to extract the text inside the backticks
+                const regex = /```(?:[a-zA-Z0-9]+)?([\s\S]+?)```/;
+                const matches = chatGPTResponse.match(regex);
+                const extractedText = matches ? matches[1] : '';
+                console.log(extractedText);
+                showGraphs(extractedText);
+                setTimeout(() => {
+                    hideSpinner();
+                    const graphDiv = document.getElementById('graph-div');
+                    graphDiv.style.display = 'block';
+                    const saveBtnhDiv = document.getElementById('save-btn-div');
+                    saveBtnhDiv.style.display = 'block';
+                }, 500)
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("response-box").innerText =
+                    "An error occurred. Please try again.";
+            }
+        }
+
+        // Function to show the prompt modal
+        function showPrompt() {
+            $('#promptModal').modal('show');
+        }
+
+        // showing the graph
+        function showGraphs(gptRespone) {
+            // Get the input value from the textarea
+            var dotInput = gptRespone;
+
+            var dotIndex = 0;
+            var graphviz = d3
+                .select("#graph")
+                .graphviz()
+                .transition(function () {
+                    return d3
+                        .transition("main")
+                        .ease(d3.easeLinear)
+                        .delay(500)
+                        .duration(1500);
+                })
+                .logEvents(true)
+                .on("initEnd", render);
+            function render() {
+                var dotLines = dots[dotIndex];
+                var dot = dotLines.join("");
+                graphviz.renderDot(dot).on("end", function () {
+                    dotIndex = (dotIndex + 1) % dots.length;
+                    render();
+                });
+                // saveSVGImageAsFile('graph', 'flow.svg');
+            }
+            // Array containing the DOT input data
+            var dots = [[dotInput]];
+        }
+
+        // downloading the svg image in to the local system.
+        function saveSVGImageAsFile(divId, fileName) {
+            // Get the SVG content from the div with the given ID
+            const svgContent = document.getElementById(divId).innerHTML;
+
+            // Create a data URL from the SVG content
+            const dataURL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
+
+            // Create an anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = dataURL;
+
+            // Set the download attribute to specify the filename
+            downloadLink.download = fileName + '_' + 'flow'
+
+            // Simulate a click on the anchor element to trigger the download
+            downloadLink.click();
+            downloadLink.remove();
+            document.getElementById('inputText').value = '';
+        }
+
+        // saving request in .txt file
+        function saveInputValueAsTxt() {
+            $('#promptModal').modal('hide');
+            const fileName = document.getElementById('inputText').value;
+
+            // Get the input value
+            const inputValue = document.getElementById('prompt').value;
+
+            // Create a Blob from the input value
+            const blob = new Blob([inputValue], { type: 'text/plain' });
+
+            // Create a URL for the Blob
+            const url = URL.createObjectURL(blob);
+
+            // Create a temporary anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = fileName + '_' + 'prompt.txt';
+
+            // Programmatically click the link to trigger the download
+            downloadLink.click();
+
+            // Cleanup the URL and remove the temporary anchor element
+            URL.revokeObjectURL(url);
+            downloadLink.remove();
+            saveResponseAsTxt(fileName);
+        }
+
+        // saving response in .txt file
+        function saveResponseAsTxt(fileName) {
+            // Get the input value
+            const inputValue = document.getElementById("response-box").innerHTML;
+
+            // Create a Blob from the input value
+            const blob = new Blob([inputValue], { type: 'text/plain' });
+
+            // Create a URL for the Blob
+            const url = URL.createObjectURL(blob);
+
+            // Create a temporary anchor element
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = fileName + '_' + 'response.txt';
+
+            // Programmatically click the link to trigger the download
+            downloadLink.click();
+
+            // Cleanup the URL and remove the temporary anchor element
+            URL.revokeObjectURL(url);
+            downloadLink.remove();
+            saveSVGImageAsFile('graph', fileName);
+        }
+    </script>
+</body>
+
+</html>
